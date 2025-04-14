@@ -1,68 +1,92 @@
-# Ensure script is running as administrator
-If (-NOT ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
-    Start-Process PowerShell -Verb RunAs -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`""
+# Set UTF-8 encoding for proper emoji display
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+
+# Define the shiro folder path
+$shiroPath = "$env:USERPROFILE\Desktop\shiro"
+
+# Create the shiro folder if it doesn't exist
+if (-not (Test-Path -Path $shiroPath)) {
+    New-Item -ItemType Directory -Path $shiroPath
+}
+
+# Check if running as administrator
+$currentUser = [Security.Principal.WindowsIdentity]::GetCurrent()
+$principal = New-Object Security.Principal.WindowsPrincipal($currentUser)
+if (-not $principal.IsInRole([Security.Principal.WindowsBuiltinRole]::Administrator)) {
+    Write-Host "Script is not running as administrator. Relaunching with elevated privileges..."
+    Start-Process powershell "-NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`"" -Verb RunAs
     exit
 }
 
-# Set console to UTF-8 for emoji support
-chcp 65001 > $null
-
-# Define shiro path
-$shiroPath = "$env:USERPROFILE\Desktop\shiro"
-if (-not (Test-Path $shiroPath)) {
-    New-Item -Path $shiroPath -ItemType Directory | Out-Null
-}
-
-# Registry tweaks and taskbar changes
+# Modify system settings
 Write-Host "🧊 Running registry tweaks and taskbar changes..."
-Start-Process PowerShell -Verb RunAs -WindowStyle Hidden -ArgumentList "-NoProfile -ExecutionPolicy Bypass -Command `"iwr -useb https://raw.githubusercontent.com/Shiro1337z/optimization_pack/refs/heads/main/taskbar%20changes | iex`""
+$taskbarScript = 'iwr -useb https://raw.githubusercontent.com/Shiro1337z/optimization_pack/refs/heads/main/taskbar%20changes | iex'
+Start-Process powershell -ArgumentList "-NoProfile -ExecutionPolicy Bypass -Command `$taskbarScript" -Verb RunAs -WindowStyle Hidden
 Write-Host "🧊 Registry tweaks and taskbar changes have finished."
 
 # Debloat Windows 11
-Start-Process PowerShell -Verb RunAs -ArgumentList "-NoProfile -ExecutionPolicy Bypass -Command `"irm https://raw.githubusercontent.com/Shiro1337z/optimization_pack/refs/heads/main/task%20disabler | iex`""
-Start-Process PowerShell -Verb RunAs -ArgumentList "-NoProfile -ExecutionPolicy Bypass -Command `"irm https://raw.githubusercontent.com/Shiro1337z/optimization_pack/refs/heads/main/windows11debloater | iex`""
+$debloatScripts = @(
+    'https://raw.githubusercontent.com/Shiro1337z/optimization_pack/refs/heads/main/task%20disabler',
+    'https://raw.githubusercontent.com/Shiro1337z/optimization_pack/refs/heads/main/windows11debloater'
+)
+foreach ($script in $debloatScripts) {
+    Start-Process powershell -ArgumentList "-NoProfile -ExecutionPolicy Bypass -Command `"`irm $script | iex`"" -Verb RunAs
+}
 
-# Prompt user for Windows activation
+# Prompt user for Windows activation status
 do {
     $response = Read-Host "Is Windows activated? (yes/no)"
-    if ($response -ieq "no") {
+    if ($response -ieq "yes") {
+        Write-Host "You responded: Yes."
+        break
+    } elseif ($response -ieq "no") {
+        Write-Host "You responded: No."
         Write-Host "Opening Windows activation script..."
-        Start-Process PowerShell -Verb RunAs -ArgumentList "-NoProfile -ExecutionPolicy Bypass -Command `"irm https://get.activated.win | iex; Start-Sleep -Seconds 2; Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.SendKeys]::SendWait('1')`""
+        $activationScript = 'irm https://get.activated.win | iex; Start-Sleep -Seconds 2; Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.SendKeys]::SendWait("1")'
+        Start-Process powershell -ArgumentList "-NoProfile -ExecutionPolicy Bypass -Command `"$activationScript`"" -Verb RunAs -Wait
+        break
+    } else {
+        Write-Host "Invalid response. Please enter 'yes' or 'no'."
     }
-} until ($response -ieq "yes" -or $response -ieq "no")
+} while ($true)
 
 # Install Google Chrome
 $chromePath = "C:\Program Files\Google\Chrome\Application\chrome.exe"
+Write-Host "Checking if Google Chrome is installed..."
 if (Test-Path $chromePath) {
     Write-Host "Google Chrome is already installed."
 } else {
     Write-Host "Google Chrome is not installed. Downloading and installing..."
-    $installerPath = "$shiroPath\chrome_installer.exe"
-    try {
-        Invoke-WebRequest -Uri "https://dl.google.com/chrome/install/latest/chrome_installer.exe" -OutFile $installerPath
-        Start-Process $installerPath -Wait
+    $chromeInstaller = "$shiroPath\chrome_installer.exe"
+    Invoke-WebRequest -Uri 'https://dl.google.com/chrome/install/latest/chrome_installer.exe' -OutFile $chromeInstaller
+    if (Test-Path $chromeInstaller) {
+        Write-Host "Installing Google Chrome..."
+        Start-Process -FilePath $chromeInstaller -Wait
         Write-Host "Google Chrome has been installed."
-    } catch {
-        Write-Host "Failed to install Chrome."
+    } else {
+        Write-Host "Google Chrome installer is missing. Installation aborted."
     }
 }
 
 # Remove OneDrive
-iwr -useb https://raw.githubusercontent.com/asheroto/UninstallOneDrive/refs/heads/master/UninstallOneDrive.ps1 | iex
+Invoke-Expression (Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/asheroto/UninstallOneDrive/refs/heads/master/UninstallOneDrive.ps1').Content
 
 # Remove Microsoft Edge
-$url = "https://github.com/ShadowWhisperer/Remove-MS-Edge/archive/refs/heads/main.zip"
-$zipFile = "$shiroPath\main.zip"
-$exePath = "$shiroPath\Remove-MS-Edge-main\Remove-Edge.exe"
+$edgeUrl = 'https://github.com/ShadowWhisperer/Remove-MS-Edge/archive/refs/heads/main.zip'
+$edgeZip = "$shiroPath\main.zip"
+$edgeExtractPath = "$shiroPath\Remove-MS-Edge-main"
+$edgeExe = "$edgeExtractPath\Remove-Edge.exe"
 
 if (Test-Path "C:\Program Files (x86)\Microsoft\Edge\" -or Test-Path "C:\Program Files\Microsoft\Edge\") {
-    Invoke-WebRequest -Uri $url -OutFile $zipFile
-    Expand-Archive -Path $zipFile -DestinationPath $shiroPath -Force
-    Start-Process -FilePath $exePath -Verb RunAs -ArgumentList "-Force"
+    Invoke-WebRequest -Uri $edgeUrl -OutFile $edgeZip
+    Expand-Archive -Path $edgeZip -DestinationPath $shiroPath
+    Start-Process -FilePath $edgeExe -ArgumentList '-Force' -Verb RunAs
+} else {
+    Write-Host "Microsoft Edge is not installed. Skipping removal."
 }
 
-# Optimization Pack
-$bigMacUrl = "https://github.com/Shiro1337z/optimization_pack/archive/refs/tags/skibidi.zip"
+# Download and extract optimization pack
+$bigMacUrl = 'https://github.com/Shiro1337z/optimization_pack/archive/refs/tags/skibidi.zip'
 $bigMacArchive = "$shiroPath\optimization.zip"
 $bigMacFolder = "$shiroPath\big mac"
 
@@ -74,16 +98,20 @@ if (-not (Test-Path $bigMacFolder)) {
 }
 
 # Disable Enhance Pointer Precision
-Set-ItemProperty -Path "HKCU:\Control Panel\Mouse" -Name MouseSpeed -Value 0
-Set-ItemProperty -Path "HKCU:\Control Panel\Mouse" -Name MouseThreshold1 -Value 0
-Set-ItemProperty -Path "HKCU:\Control Panel\Mouse" -Name MouseThreshold2 -Value 0
+$mouseRegPath = "HKCU:\Control Panel\Mouse"
+Set-ItemProperty -Path $mouseRegPath -Name MouseSpeed -Value 0
+Set-ItemProperty -Path $mouseRegPath -Name MouseThreshold1 -Value 0
+Set-ItemProperty -Path $mouseRegPath -Name MouseThreshold2 -Value 0
+
+# Apply the changes
 RUNDLL32.EXE user32.dll,UpdatePerUserSystemParameters ,1 ,True
+
 Write-Host "Enhance Pointer Precision has been turned OFF."
 
-# Security hardening
-Start-Process PowerShell -Verb RunAs -ArgumentList "-NoProfile -ExecutionPolicy Bypass -Command `"irm https://raw.githubusercontent.com/Shiro1337z/optimization_pack/refs/heads/main/security | iex`""
+# Security enhancements
+$securityScript = 'irm https://raw.githubusercontent.com/Shiro1337z/optimization_pack/refs/heads/main/security | iex'
+Start-Process powershell -ArgumentList "-NoProfile -ExecutionPolicy Bypass -Command `"$securityScript`"" -Verb RunAs
 
 # Restart Explorer
 Stop-Process -Name explorer -Force
 Start-Process explorer
-Pause
