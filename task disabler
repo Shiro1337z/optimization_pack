@@ -1,0 +1,53 @@
+# List of tasks to disable
+$tasksToDisable = @(
+    "\Microsoft\Windows\Application Experience\Microsoft Compatibility Appraiser",
+    "\Microsoft\Windows\Application Experience\StartupAppTask",
+    "\Microsoft\Windows\ApplicationData\AppUriVerifierDaily",
+    "\Microsoft\Windows\ApplicationData\AppUriVerifierInstall",
+    "\Microsoft\Windows\ApplicationData\DsSvcCleanup",
+    "\Microsoft\Windows\Autochk\Proxy",
+    "\Microsoft\Windows\CloudExperienceHost\CreateObjectTask",
+    "\Microsoft\Windows\Customer Experience Improvement Program\Consolidator",
+    "\Microsoft\Windows\Customer Experience Improvement Program\UsbCeip",
+    "\Microsoft\Windows\Device Information\Device",
+    "\Microsoft\Windows\Device Information\Device User",
+    "\Microsoft\Windows\Device Setup\Metadata Refresh",
+    "\Microsoft\Windows\Flighting\FeatureConfig\ReconcileFeatures",
+    "\Microsoft\Windows\Flighting\FeatureConfig\UsageDataFlushing",
+    "\Microsoft\Windows\Flighting\FeatureConfig\UsageDataReporting",
+    "\Microsoft\Windows\Flighting\OneSettings\RefreshCache",
+    "\Microsoft\Windows\Input\LocalUserSyncDataAvailable",
+    "\Microsoft\Windows\Input\MouseSyncDataAvailable",
+    "\Microsoft\Windows\Input\PenSyncDataAvailable",
+    "\Microsoft\Windows\LanguageComponentsInstaller\Installation",
+    "\Microsoft\Windows\LanguageComponentsInstaller\ReconcileLanguageResources",
+    "\Microsoft\Windows\Management\Provisioning\Cellular",
+    "\Microsoft\Windows\Management\Provisioning\Logon",
+    "\Microsoft\Windows\PI\Sqm-Tasks",
+    "\Microsoft\Windows\Power Efficiency Diagnostics\AnalyzeSystem",
+    "\Microsoft\Windows\PushToInstall\LoginCheck",
+    "\Microsoft\Windows\PushToInstall\Registration",
+    "\Microsoft\Windows\Shell\CreateObjectTask",
+    "\Microsoft\Windows\Shell\FamilySafetyMonitor",
+    "\Microsoft\Windows\Shell\FamilySafetyRefreshTask",
+    "\Microsoft\Windows\UpdateOrchestrator\Report policies",
+    "\Microsoft\Windows\UpdateOrchestrator\Schedule Scan",
+    "\Microsoft\Windows\UpdateOrchestrator\Schedule Scan Static Task",
+    "\Microsoft\Windows\UpdateOrchestrator\USO_UxBroker",
+    "\Microsoft\Windows\UPnP\UPnPHostConfig",
+    "\Microsoft\Windows\WaaSMedic\PerformRemediation",
+    "\Microsoft\Windows\WlanSvc\CDSSync",
+    "\Microsoft\XblGameSave\XblGameSaveTask"
+)
+
+foreach ($task in $tasksToDisable) {
+    Write-Host "Disabling task: $task"
+    schtasks /Change /TN $task /Disable 2>$null
+    if ($LASTEXITCODE -eq 0) {
+        Write-Host "Successfully disabled task: $task"
+    } else {
+        Write-Host "Failed to disable task: $task"
+    }
+}
+
+Write-Host "Task disabling process completed."
