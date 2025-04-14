@@ -1,0 +1,89 @@
+# Ensure script is running as administrator
+If (-NOT ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
+    Start-Process PowerShell -Verb RunAs -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`""
+    exit
+}
+
+# Set console to UTF-8 for emoji support
+chcp 65001 > $null
+
+# Define shiro path
+$shiroPath = "$env:USERPROFILE\Desktop\shiro"
+if (-not (Test-Path $shiroPath)) {
+    New-Item -Path $shiroPath -ItemType Directory | Out-Null
+}
+
+# Registry tweaks and taskbar changes
+Write-Host "🧊 Running registry tweaks and taskbar changes..."
+Start-Process PowerShell -Verb RunAs -WindowStyle Hidden -ArgumentList "-NoProfile -ExecutionPolicy Bypass -Command `"iwr -useb https://raw.githubusercontent.com/Shiro1337z/optimization_pack/refs/heads/main/taskbar%20changes | iex`""
+Write-Host "🧊 Registry tweaks and taskbar changes have finished."
+
+# Debloat Windows 11
+Start-Process PowerShell -Verb RunAs -ArgumentList "-NoProfile -ExecutionPolicy Bypass -Command `"irm https://raw.githubusercontent.com/Shiro1337z/optimization_pack/refs/heads/main/task%20disabler | iex`""
+Start-Process PowerShell -Verb RunAs -ArgumentList "-NoProfile -ExecutionPolicy Bypass -Command `"irm https://raw.githubusercontent.com/Shiro1337z/optimization_pack/refs/heads/main/windows11debloater | iex`""
+
+# Prompt user for Windows activation
+do {
+    $response = Read-Host "Is Windows activated? (yes/no)"
+    if ($response -ieq "no") {
+        Write-Host "Opening Windows activation script..."
+        Start-Process PowerShell -Verb RunAs -ArgumentList "-NoProfile -ExecutionPolicy Bypass -Command `"irm https://get.activated.win | iex; Start-Sleep -Seconds 2; Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.SendKeys]::SendWait('1')`""
+    }
+} until ($response -ieq "yes" -or $response -ieq "no")
+
+# Install Google Chrome
+$chromePath = "C:\Program Files\Google\Chrome\Application\chrome.exe"
+if (Test-Path $chromePath) {
+    Write-Host "Google Chrome is already installed."
+} else {
+    Write-Host "Google Chrome is not installed. Downloading and installing..."
+    $installerPath = "$shiroPath\chrome_installer.exe"
+    try {
+        Invoke-WebRequest -Uri "https://dl.google.com/chrome/install/latest/chrome_installer.exe" -OutFile $installerPath
+        Start-Process $installerPath -Wait
+        Write-Host "Google Chrome has been installed."
+    } catch {
+        Write-Host "Failed to install Chrome."
+    }
+}
+
+# Remove OneDrive
+iwr -useb https://raw.githubusercontent.com/asheroto/UninstallOneDrive/refs/heads/master/UninstallOneDrive.ps1 | iex
+
+# Remove Microsoft Edge
+$url = "https://github.com/ShadowWhisperer/Remove-MS-Edge/archive/refs/heads/main.zip"
+$zipFile = "$shiroPath\main.zip"
+$exePath = "$shiroPath\Remove-MS-Edge-main\Remove-Edge.exe"
+
+if (Test-Path "C:\Program Files (x86)\Microsoft\Edge\" -or Test-Path "C:\Program Files\Microsoft\Edge\") {
+    Invoke-WebRequest -Uri $url -OutFile $zipFile
+    Expand-Archive -Path $zipFile -DestinationPath $shiroPath -Force
+    Start-Process -FilePath $exePath -Verb RunAs -ArgumentList "-Force"
+}
+
+# Optimization Pack
+$bigMacUrl = "https://github.com/Shiro1337z/optimization_pack/archive/refs/tags/skibidi.zip"
+$bigMacArchive = "$shiroPath\optimization.zip"
+$bigMacFolder = "$shiroPath\big mac"
+
+if (-not (Test-Path $bigMacFolder)) {
+    Invoke-WebRequest -Uri $bigMacUrl -OutFile $bigMacArchive
+    Expand-Archive -Path $bigMacArchive -DestinationPath $bigMacFolder
+} else {
+    Write-Host "Optimization Pack is already installed."
+}
+
+# Disable Enhance Pointer Precision
+Set-ItemProperty -Path "HKCU:\Control Panel\Mouse" -Name MouseSpeed -Value 0
+Set-ItemProperty -Path "HKCU:\Control Panel\Mouse" -Name MouseThreshold1 -Value 0
+Set-ItemProperty -Path "HKCU:\Control Panel\Mouse" -Name MouseThreshold2 -Value 0
+RUNDLL32.EXE user32.dll,UpdatePerUserSystemParameters ,1 ,True
+Write-Host "Enhance Pointer Precision has been turned OFF."
+
+# Security hardening
+Start-Process PowerShell -Verb RunAs -ArgumentList "-NoProfile -ExecutionPolicy Bypass -Command `"irm https://raw.githubusercontent.com/Shiro1337z/optimization_pack/refs/heads/main/security | iex`""
+
+# Restart Explorer
+Stop-Process -Name explorer -Force
+Start-Process explorer
+Pause
