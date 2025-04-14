@@ -1,12 +1,3 @@
-# Function to run a command as administrator
-function Run-AsAdmin {
-    param (
-        [string]$Command
-    )
-    $escapedCommand = $Command.Replace('"', '""')  # Escape inner quotes
-    Start-Process powershell -ArgumentList "-NoProfile -ExecutionPolicy Bypass -Command `"$escapedCommand`"" -Verb RunAs -Wait
-}
-
 # Ensure the Microsoft.WinGet.Client module is installed
 Run-AsAdmin -Command 'if (-not (Get-Module -ListAvailable -Name Microsoft.WinGet.Client)) { Install-Module -Name Microsoft.WinGet.Client -Force -Scope CurrentUser }'
 
