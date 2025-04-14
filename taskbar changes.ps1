@@ -91,7 +91,7 @@ $commands = @(
     "reg add 'HKCR\DesktopBackground\Shell\PowerPlan\shell\06menu' /v Icon /t REG_SZ /d 'powercpl.dll' /f",
     "reg add 'HKCR\DesktopBackground\Shell\PowerPlan\shell\06menu' /v MUIVerb /t REG_SZ /d 'Khorvie plan' /f",
     "reg add 'HKCR\DesktopBackground\Shell\PowerPlan\shell\06menu' /v Icon /t REG_SZ /d 'powercpl.dll' /f",
-    "reg add 'HKCR\DesktopBackground\Shell\PowerPlan\shell\06menu\command' /ve /t REG_SZ /d 'powercfg.exee /setactive 1e5d685f-1f5e-45fa-a75b-7c8d1d03036e' /f"
+    "reg add 'HKCR\DesktopBackground\Shell\PowerPlan\shell\06menu\command' /ve /t REG_SZ /d 'powercfg.exe /setactive 1e5d685f-1f5e-45fa-a75b-7c8d1d03036e' /f"
 
 )
 
